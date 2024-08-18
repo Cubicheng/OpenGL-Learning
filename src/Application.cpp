@@ -7,9 +7,9 @@
 #include <sstream>
 
 # define ASSERT(x) if(!(x)) __debugbreak();
-# define GLCall(x) {GLClearError();\
+# define GLCall(x) GLClearError();\
     x;\
-    ASSERT(GLLogCall(#x,__FILE__,__LINE__))}
+    ASSERT(GLLogCall(#x,__FILE__,__LINE__))
 
 void GLClearError() {
     while (glGetError() != GL_NO_ERROR);
@@ -114,6 +114,8 @@ int main(void)
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
 
+    glfwSwapInterval(1);
+
     if (glewInit() != GLEW_OK)
         std::cout << "error\n";
 
@@ -147,9 +149,15 @@ int main(void)
 
 
     ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
-
     unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
     glUseProgram(shader);
+
+    GLCall(int location = glGetUniformLocation(shader, "u_Color"));
+    ASSERT(location != -1);
+    GLCall(glUniform4f(location, 0.2f, 0.3f, 0.8f, 1.0f));
+
+    float r = 0.0f;
+    float increment = 0.05f;
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -157,8 +165,15 @@ int main(void)
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
-        GLCall(glDrawElements(GL_TRIANGLES, 6, GL_INT, nullptr));
-        //it should be GL_UNSIGNED_INT instead of GL_INT
+        r += increment;
+        if (r > 1.0f) increment = -0.05f;
+        else if (r < 0.0f) increment = 0.05f;
+
+        GLCall(glUniform4f(location, r, 0.3f, 0.8f, 1.0f));
+
+        GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+
+        
         
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
